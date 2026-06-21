@@ -10,8 +10,8 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -21,9 +21,10 @@ jobs:
   qmk-firmware:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi
       - run: python3 -m pip install --user qmk
       - run: git clone --depth 1 --recurse-submodules --shallow-submodules --branch bluetooth_playground https://github.com/Keychron/qmk_firmware.git "$RUNNER_TEMP/qmk_firmware"
+      - run: python3 -m pip install --user -r "$RUNNER_TEMP/qmk_firmware/requirements.txt"
       - run: qmk config user.qmk_home="$RUNNER_TEMP/qmk_firmware"
       - run: QMK_HOME="$RUNNER_TEMP/qmk_firmware" ./scripts/build-q6-pro.sh
