@@ -1,0 +1,23 @@
+diff --git a/keyboards/keychron/q6_pro/q6_pro.c b/keyboards/keychron/q6_pro/q6_pro.c
+index 1a50a888e..520b15c1c 100644
+--- a/keyboards/keychron/q6_pro/q6_pro.c
++++ b/keyboards/keychron/q6_pro/q6_pro.c
+@@ -17,2 +17,3 @@
+ #include "q6_pro.h"
++#include "agentglow.h"
+ #ifdef KC_BLUETOOTH_ENABLE
+@@ -304,2 +305,4 @@
+ bool via_command_kb(uint8_t *data, uint8_t length) {
++    if (agentglow_command(data, length)) return true;
++
+     switch (data[0]) {
+diff --git a/keyboards/keychron/q6_pro/rules.mk b/keyboards/keychron/q6_pro/rules.mk
+index af9e1e706..c859cc097 100644
+--- a/keyboards/keychron/q6_pro/rules.mk
++++ b/keyboards/keychron/q6_pro/rules.mk
+@@ -1,2 +1,5 @@
++RGB_MATRIX_CUSTOM_KB = yes
++SRC += agentglow.c
++
+ # Enter lower-power sleep mode when on the ChibiOS idle thread
+ OPT_DEFS += -DCORTEX_ENABLE_WFI_IDLE=TRUE

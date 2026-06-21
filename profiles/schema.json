@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/shuhari04/AgentGlow/blob/main/profiles/schema.json",
+  "title": "AgentGlow keyboard profile",
+  "type": "object",
+  "required": ["id", "name", "vendorId", "productIds", "usagePage", "usage", "ledCount", "characterMap", "randomKeys"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "vendorId": { "type": "integer", "minimum": 0, "maximum": 65535 },
+    "productIds": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 65535 } },
+    "usagePage": { "type": "integer" },
+    "usage": { "type": "integer" },
+    "ledCount": { "type": "integer", "minimum": 1, "maximum": 255 },
+    "characterMap": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0, "maximum": 254 } },
+    "randomKeys": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 254 } }
+  },
+  "additionalProperties": false
+}
