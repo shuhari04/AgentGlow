@@ -24,3 +24,15 @@ test("test mode starts a sustained thinking animation", () => {
   assert.ok(sent.includes(Opcode.KeyEvents) === false);
   daemon.handle({ type: "restore" });
 });
+
+test("manual preview starts the selected firmware state", () => {
+  const sent: Opcode[] = [];
+  const transport = {
+    connection: { profile: q6ProAnsi, support: "agentglow", product: "Q6 Pro" },
+    send(opcode: Opcode) { sent.push(opcode); return true; },
+  };
+  const daemon = new AgentGlowDaemon(transport as never);
+  daemon.handle({ type: "preview", state: AgentState.Error, durationMs: 250 });
+  assert.equal(sent[0], Opcode.SetState);
+  daemon.handle({ type: "restore" });
+});

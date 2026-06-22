@@ -33,6 +33,18 @@ async function main(): Promise<void> {
       if (status.support !== "agentglow") throw new Error(status.support === "via-only" ? "Keyboard supports VIA but does not have the AgentGlow firmware protocol." : "AgentGlow firmware protocol is unavailable.");
       await sendMessage({ type: "test" }); console.log("Test animation sent."); return;
     }
+    case "preview": {
+      const state = previewState(args[0]);
+      const durationMs = Number(args[1] ?? 5000);
+      await sendMessage({ type: "preview", state, durationMs });
+      console.log(`Previewing ${args[0]} for ${Math.round(durationMs / 100) / 10}s.`); return;
+    }
+    case "text": {
+      const text = args.join(" ");
+      if (!text) throw new Error("Usage: agentglow text <characters>");
+      await sendMessage({ type: "text", source: "manual", text });
+      console.log("Text lighting preview sent."); return;
+    }
     case "install-hooks": {
       const paths = installHooks(process.argv[1]); console.log(`Hooks installed without replacing existing entries:\n${paths.join("\n")}`); return;
     }
@@ -54,7 +66,16 @@ function supportMessage(support: string): string {
   if (support === "via-only") return "VIA detected, AgentGlow firmware not installed";
   return "Raw HID found, AgentGlow protocol unavailable";
 }
+function previewState(value = ""): AgentState {
+  const states: Record<string, AgentState> = {
+    thinking: AgentState.Thinking, tool: AgentState.Tool, streaming: AgentState.Streaming,
+    complete: AgentState.Complete, error: AgentState.Error,
+  };
+  const state = states[value.toLowerCase()];
+  if (state === undefined) throw new Error("Usage: agentglow preview <thinking|tool|streaming|complete|error> [milliseconds]");
+  return state;
+}
 function sleep(ms: number): Promise<void> { return new Promise((resolve) => setTimeout(resolve, ms)); }
-function help(): string { return `AgentGlow 0.1.0\n\nCommands:\n  start | stop | status | test | restore\n  install-hooks\n  codex -- <codex exec arguments>\n  claude -- <claude print arguments>`; }
+function help(): string { return `AgentGlow 0.1.0\n\nCommands:\n  start | stop | status | test | restore\n  preview <thinking|tool|streaming|complete|error> [milliseconds]\n  text <characters>\n  install-hooks\n  codex -- <codex exec arguments>\n  claude -- <claude print arguments>`; }
 
 main().catch((error) => { console.error(`agentglow: ${error instanceof Error ? error.message : String(error)}`); process.exitCode = 1; });

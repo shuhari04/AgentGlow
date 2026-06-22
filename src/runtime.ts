@@ -12,7 +12,8 @@ export const pidPath = join(runtimeDir, "agentglow.pid");
 
 export type RuntimeMessage =
   | { type: "event"; source: "codex" | "claude" | "manual"; state: AgentState }
-  | { type: "text"; source: "codex" | "claude"; text: string }
+  | { type: "text"; source: "codex" | "claude" | "manual"; text: string }
+  | { type: "preview"; state: AgentState; durationMs?: number }
   | { type: "test" }
   | { type: "restore" }
   | { type: "status" };
@@ -79,25 +80,36 @@ export class AgentGlowDaemon {
       this.sourceStates.set(message.source, message.state);
       this.setState(mergeStates([...this.sourceStates.values()])); return;
     }
+    if (message.type === "preview") {
+      this.sourceStates.set("manual", message.state);
+      this.setState(mergeStates([...this.sourceStates.values()]));
+      this.scheduleManualRestore(message.durationMs ?? 5000);
+      return;
+    }
     if (!profile) return;
     if (message.type === "text") {
       this.setState(AgentState.Streaming);
       this.textQueue.push(...mapText(profile, message.text));
       this.startTextPlayback();
+      if (message.source === "manual") this.scheduleManualRestore(Math.max(1200, this.textQueue.length * 35 + 700));
       return;
     }
     if (message.type === "test") {
       this.sourceStates.set("manual", AgentState.Thinking);
       this.setState(mergeStates([...this.sourceStates.values()]));
-      if (this.testTimer) clearTimeout(this.testTimer);
-      this.testTimer = setTimeout(() => {
-        this.testTimer = undefined;
-        this.sourceStates.delete("manual");
-        const next = mergeStates([...this.sourceStates.values()]);
-        this.setState(next);
-        if (next === AgentState.Idle) this.transport.send(Opcode.Restore);
-      }, 5000);
+      this.scheduleManualRestore(5000);
     }
+  }
+
+  private scheduleManualRestore(durationMs: number): void {
+    if (this.testTimer) clearTimeout(this.testTimer);
+    this.testTimer = setTimeout(() => {
+      this.testTimer = undefined;
+      this.sourceStates.delete("manual");
+      const next = mergeStates([...this.sourceStates.values()]);
+      this.setState(next);
+      if (next === AgentState.Idle) this.transport.send(Opcode.Restore);
+    }, Math.min(30_000, Math.max(250, durationMs)));
   }
 
   private startTextPlayback(): void {

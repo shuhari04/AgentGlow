@@ -45,6 +45,10 @@ agentglow restore    # restore the pre-AgentGlow RGB state
 agentglow stop
 ```
 
+## macOS test app
+
+Build the local SwiftUI control panel with `./scripts/build-macos-app.sh`, then open `build/AgentGlow Lab.app`. It manages the daemon, previews agent states, runs a sustained random test, restores the prior RGB mode, and replays sample text as key-light events.
+
 ## Build Q6 Pro firmware
 
 Set up the Keychron `bluetooth_playground` QMK fork first, then run:

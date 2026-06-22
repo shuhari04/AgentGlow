@@ -30,3 +30,9 @@ jobs:
       - run: python3 -m pip install --user -r "$RUNNER_TEMP/qmk_firmware/requirements.txt"
       - run: qmk config user.qmk_home="$RUNNER_TEMP/qmk_firmware"
       - run: QMK_HOME="$RUNNER_TEMP/qmk_firmware" ./scripts/build-q6-pro.sh
+
+  macos-app:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: swift build --package-path apps/AgentGlowMac
