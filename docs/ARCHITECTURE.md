@@ -24,7 +24,7 @@ The host sends semantic events, not full RGB frames. Animation and decay run on 
 
 ## Privacy and failure behavior
 
-Text is mapped directly to LED indices and discarded. No prompt, response, tool input, or environment content is logged. The firmware uses no-EEPROM RGB APIs. A missing heartbeat for three seconds restores the prior enable state, effect, HSV and brightness.
+Text is mapped directly to LED indices and discarded. No prompt, response, tool input, or environment content is logged. The firmware uses no-EEPROM RGB APIs. A missing heartbeat for three seconds restores the prior enable state, effect, HSV and brightness. Completion and error animations are time-bounded and restore the previous RGB mode after 1.6 and 2.2 seconds respectively.
 
 ## Extending
 

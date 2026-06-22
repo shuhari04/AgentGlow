@@ -19,6 +19,8 @@
 #define AG_COMPLETE 4
 #define AG_ERROR 5
 #define AG_WATCHDOG_MS 3000
+#define AG_COMPLETE_DURATION_MS 1600
+#define AG_ERROR_DURATION_MS 2200
 
 static uint8_t levels[RGB_MATRIX_LED_COUNT];
 static uint8_t state;
@@ -110,6 +112,11 @@ bool agentglow_command(uint8_t *data, uint8_t length) {
 void agentglow_task(void) {
     if (!active) return;
     if (timer_elapsed32(last_heartbeat) > AG_WATCHDOG_MS) {
+        agentglow_restore();
+        return;
+    }
+    if ((state == AG_COMPLETE && timer_elapsed32(state_started) > AG_COMPLETE_DURATION_MS) ||
+        (state == AG_ERROR && timer_elapsed32(state_started) > AG_ERROR_DURATION_MS)) {
         agentglow_restore();
         return;
     }

@@ -56,12 +56,14 @@ Set up the Keychron `bluetooth_playground` QMK fork first, then run:
 Output: `build/agentglow-q6-pro-ansi-v0.1.0.bin`. The script checks that target QMK files are clean, applies the overlay, builds, copies the binary, and restores the QMK checkout. It never invokes a flasher.
 
 Read [firmware and recovery guidance](docs/FIRMWARE.md) before flashing anything.
+Also review the [Q6 Pro pre-flash audit](docs/PREFLIGHT-AUDIT.md) for the verified scope and remaining runtime risks.
 
 ## Architecture and compatibility
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Compatibility](docs/COMPATIBILITY.md)
 - [Firmware and recovery](docs/FIRMWARE.md)
+- [Q6 Pro pre-flash audit](docs/PREFLIGHT-AUDIT.md)
 - [Contributing](CONTRIBUTING.md)
 
 ## 中文说明

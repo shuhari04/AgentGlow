@@ -8,6 +8,8 @@ test("firmware includes heartbeat watchdog and restore path", () => {
   assert.match(firmware, /AG_WATCHDOG_MS 3000/);
   assert.match(firmware, /timer_elapsed32\(last_heartbeat\).*AG_WATCHDOG_MS/);
   assert.match(firmware, /agentglow_restore\(\)/);
+  assert.match(firmware, /AG_COMPLETE_DURATION_MS 1600/);
+  assert.match(firmware, /AG_ERROR_DURATION_MS 2200/);
 });
 
 test("firmware never writes RGB state to EEPROM", () => {
