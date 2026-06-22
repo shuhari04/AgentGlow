@@ -28,6 +28,7 @@ export class AgentGlowDaemon {
   private server?: Server;
   private heartbeat?: NodeJS.Timeout;
   private randomTyping?: NodeJS.Timeout;
+  private testTimer?: NodeJS.Timeout;
   private textTimer?: NodeJS.Timeout;
   private textQueue: number[] = [];
   private state = AgentState.Idle;
@@ -70,6 +71,8 @@ export class AgentGlowDaemon {
       socket?.write(`${JSON.stringify(status)}\n`); return;
     }
     if (message.type === "restore") {
+      if (this.testTimer) clearTimeout(this.testTimer);
+      this.testTimer = undefined;
       this.sourceStates.clear(); this.textQueue.length = 0; this.setState(AgentState.Idle); this.transport.send(Opcode.Restore); return;
     }
     if (message.type === "event") {
@@ -84,9 +87,16 @@ export class AgentGlowDaemon {
       return;
     }
     if (message.type === "test") {
-      this.setState(AgentState.Streaming);
-      const keys = profile.randomKeys.slice(0, 12).map((led) => ({ led }));
-      this.transport.send(Opcode.KeyEvents, encodeKeyEvents(keys));
+      this.sourceStates.set("manual", AgentState.Thinking);
+      this.setState(mergeStates([...this.sourceStates.values()]));
+      if (this.testTimer) clearTimeout(this.testTimer);
+      this.testTimer = setTimeout(() => {
+        this.testTimer = undefined;
+        this.sourceStates.delete("manual");
+        const next = mergeStates([...this.sourceStates.values()]);
+        this.setState(next);
+        if (next === AgentState.Idle) this.transport.send(Opcode.Restore);
+      }, 5000);
     }
   }
 
@@ -121,6 +131,7 @@ export class AgentGlowDaemon {
     if (this.heartbeat) clearInterval(this.heartbeat);
     if (this.randomTyping) clearInterval(this.randomTyping);
     if (this.textTimer) clearInterval(this.textTimer);
+    if (this.testTimer) clearTimeout(this.testTimer);
     this.transport.send(Opcode.Restore);
     this.transport.close();
     await new Promise<void>((resolve) => this.server?.close(() => resolve()) ?? resolve());
