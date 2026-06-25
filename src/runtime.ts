@@ -42,8 +42,10 @@ export class AgentGlowDaemon {
     mkdirSync(runtimeDir, { recursive: true, mode: 0o700 });
     rmSync(socketPath, { force: true });
     writeFileSync(pidPath, String(process.pid), { mode: 0o600 });
-    const connection = this.transport.connect();
-    if (connection?.support === "agentglow") this.heartbeat = setInterval(() => this.transport.send(Opcode.Heartbeat), 1000);
+    this.ensureConnected();
+    this.heartbeat = setInterval(() => {
+      if (!this.transport.send(Opcode.Heartbeat)) this.ensureConnected();
+    }, 1000);
     this.server = createServer((socket) => this.accept(socket));
     return new Promise((resolve, reject) => {
       this.server!.once("error", reject);
@@ -66,7 +68,7 @@ export class AgentGlowDaemon {
   }
 
   handle(message: RuntimeMessage, socket?: Socket): void {
-    const profile = this.transport.connection?.profile;
+    const profile = this.ensureConnected()?.profile;
     if (message.type === "status") {
       const status: RuntimeStatus = { running: true, device: this.transport.connection?.product, support: this.transport.connection?.support, state: this.state };
       socket?.write(`${JSON.stringify(status)}\n`); return;
@@ -99,6 +101,13 @@ export class AgentGlowDaemon {
       this.setState(mergeStates([...this.sourceStates.values()]));
       this.scheduleManualRestore(5000);
     }
+  }
+
+  private ensureConnected() {
+    if (this.transport.connection?.support === "agentglow") return this.transport.connection;
+    const connection = this.transport.connect();
+    if (connection?.support === "agentglow" && this.state !== AgentState.Idle) this.setState(this.state);
+    return connection;
   }
 
   private scheduleManualRestore(durationMs: number): void {

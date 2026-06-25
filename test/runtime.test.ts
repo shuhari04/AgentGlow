@@ -36,3 +36,22 @@ test("manual preview starts the selected firmware state", () => {
   assert.equal(sent[0], Opcode.SetState);
   daemon.handle({ type: "restore" });
 });
+
+test("status retries HID connection after startup races USB enumeration", () => {
+  let attempts = 0;
+  const transport = {
+    connection: undefined as undefined | { profile: typeof q6ProAnsi; support: "agentglow"; product: string },
+    connect() {
+      attempts += 1;
+      this.connection = { profile: q6ProAnsi, support: "agentglow", product: "Q6 Pro" };
+      return this.connection;
+    },
+    send() { return true; },
+  };
+  const writes: string[] = [];
+  const socket = { write(value: string) { writes.push(value); } };
+  const daemon = new AgentGlowDaemon(transport as never);
+  daemon.handle({ type: "status" }, socket as never);
+  assert.equal(attempts, 1);
+  assert.match(writes[0], /"support":"agentglow"/);
+});
