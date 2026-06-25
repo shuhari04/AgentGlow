@@ -113,7 +113,7 @@ enum AgentGlowCommandError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .missingCLI: "找不到 agentglow CLI，请先运行 npm link"
+        case .missingCLI: "找不到 agentglow CLI 或 Node.js，请先运行 npm install -g ."
         case .failed(let output): output.isEmpty ? "AgentGlow 命令执行失败" : output
         }
     }
@@ -122,14 +122,15 @@ enum AgentGlowCommandError: LocalizedError {
 enum AgentGlowCommand {
     static func run(_ arguments: [String]) async throws -> String {
         try await Task.detached(priority: .userInitiated) {
-            let candidates = ["/opt/homebrew/bin/agentglow", "/usr/local/bin/agentglow"]
-            guard let path = candidates.first(where: FileManager.default.isExecutableFile(atPath:)) else {
-                throw AgentGlowCommandError.missingCLI
-            }
+            let command = try resolveCommand(arguments)
             let process = Process()
             let output = Pipe()
-            process.executableURL = URL(fileURLWithPath: path)
-            process.arguments = arguments
+            process.executableURL = URL(fileURLWithPath: command.executable)
+            process.arguments = command.arguments
+            process.environment = [
+                "PATH": "/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+                "HOME": NSHomeDirectory()
+            ]
             process.standardOutput = output
             process.standardError = output
             try process.run()
@@ -141,5 +142,31 @@ enum AgentGlowCommand {
             }
             return text
         }.value
+    }
+
+    private static func resolveCommand(_ arguments: [String]) throws -> (executable: String, arguments: [String]) {
+        let fileManager = FileManager.default
+        let home = NSHomeDirectory()
+        let nodeCandidates = [
+            "/opt/homebrew/opt/node@22/bin/node",
+            "/opt/homebrew/bin/node",
+            "/usr/local/bin/node"
+        ]
+        let cliCandidates = [
+            "\(home)/.agentglow/app/dist/src/cli.js",
+            "/opt/homebrew/lib/node_modules/agentglow/dist/src/cli.js",
+            "/usr/local/lib/node_modules/agentglow/dist/src/cli.js"
+        ]
+        if let node = nodeCandidates.first(where: { fileManager.isExecutableFile(atPath: $0) }),
+           let cli = cliCandidates.first(where: { fileManager.isReadableFile(atPath: $0) }) {
+            return (node, [cli] + arguments)
+        }
+
+        let shimCandidates = ["/opt/homebrew/bin/agentglow", "/usr/local/bin/agentglow"]
+        if let shim = shimCandidates.first(where: { fileManager.isExecutableFile(atPath: $0) }) {
+            return (shim, arguments)
+        }
+
+        throw AgentGlowCommandError.missingCLI
     }
 }
